@@ -1,4 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
+const { episodes } = require('../../database/base');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -29,8 +30,11 @@ module.exports = {
 				)
 				.setRequired(true)),
 	async execute(interaction) {
+		console.log(episodes);
+		const data = { title: interaction.options.getString('name'), duration: interaction.options.getString('duration'), saga: interaction.options.getString('saga'), note: 0 };
+		const result = await episodes.insertOne(data);
 		await interaction.reply(`
         Vous avez ajouté l'épisode "${interaction.options.getString('name')}" \nil dure ${interaction.options.getString('duration')} mins \net fait partie de la saga: ${interaction.options.getString('saga')}
-        `);
+        \n\nL'id de l'episode est: ${result.insertedId} (testing purposes)`);
 	},
 };
