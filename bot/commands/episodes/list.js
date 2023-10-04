@@ -1,8 +1,23 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { episodes, chapters, users } = require('../../database/base');
+const { menu_row, row } = require('../../components/components');
 
+let ep_list;
+
+async function filterSaga(sagaName) {
+
+	let new_list;
+	ep_list.forEach(ep => {
+		console.log(ep.saga, ' - ', sagaName);
+		if (ep.saga === sagaName) {
+			new_list.push(ep);
+		}
+	});
+	return new_list;
+}
 
 module.exports = {
+	filterSaga,
 	data: new SlashCommandBuilder()
 		.setName('list')
 		.setDescription('List of episodes')
@@ -32,18 +47,6 @@ module.exports = {
 				)
 				.setRequired(true)),
 	async execute(interaction) {
-
-		const next = new ButtonBuilder()
-			.setCustomId('next')
-			.setLabel('Next page')
-			.setStyle(ButtonStyle.Primary);
-		const previous = new ButtonBuilder()
-			.setCustomId('previous')
-			.setLabel('Previous page')
-			.setStyle(ButtonStyle.Secondary);
-
-		const row = new ActionRowBuilder()
-			.addComponents(previous, next);
 
 		const embedResponse = new EmbedBuilder()
 			.setColor(0x0099FF)
@@ -109,46 +112,28 @@ module.exports = {
 		};
 
 		async function buildResponseEp(list) {
-			for await (const { title, duration, note, saga } of list) {
-				const sagaName = getSagaName(saga);
-				console.log(`Duration: ${duration}, Note: ${note}, Saga: ${sagaName}`);
-				embedResponse.setTitle(title).setDescription('Blahblahblah')
-					.setFields(
-						{ name: 'Duration: ', value: `${duration}` },
-						{ name: 'Note: ', value: `${note}`, inline: true },
-						{ name: 'Saga: ', value: `${sagaName}`, inline: true },
-					);
-				console.log(row);
-				interaction.channel.send({ embeds: [embedResponse], components: [row] });
-			}
+			const sagaName = getSagaName(list.saga);
+			embedResponse.setTitle(list.title).setDescription('Blahblahblah')
+				.setFields(
+					{ name: 'Duration: ', value: `${list.duration}` },
+					{ name: 'Note: ', value: `${list.note}`, inline: true },
+					{ name: 'Saga: ', value: `${sagaName}`, inline: true },
+				);
+			interaction.channel.send({ embeds: [embedResponse], components: [menu_row, row] });
 		}
 
 
 		if (interaction.options.getString('type') === 'ep') {
-			if (interaction.options.getString('saga') === 'all') {
-				await interaction.reply('La liste de tous les épisodes:');
-				const list = await episodes.find({});
-				buildResponseEp(list);
-			}
-			else {
-				const list = await episodes.find({ saga: interaction.options.getString('saga') });
-				await interaction.reply(`La liste des épisodes de la saga ${interaction.options.getString('saga')}:`);
-				buildResponseEp(list);
-			}
+			const list = await episodes.find({}).toArray();
+			ep_list = list;
+			buildResponseEp(list[0]);
 		}
 		else if (interaction.options.getString('type') === 'ch') {
-			if (interaction.options.getString('saga') === 'all') {
-				await interaction.reply('La liste de tous les chapitres:');
-				const list = await chapters.find();
-				console.log(list);
-			}
-			else {
-				const list = await chapters.find({ saga: interaction.options.saga });
-				console.log(list);
-			}
+			const list = await chapters.find({}).toArray();
+			console.log(list);
 		}
 		else {
-			console.log(users.find());
+			console.log(users.find().toArray());
 		}
 	},
 };
