@@ -31,8 +31,7 @@ module.exports = {
 		}
 		else if (interaction.isStringSelectMenu()) {
 			const sagaChoosed = interaction.values.toString();
-			const new_list = filterSaga(sagaChoosed);
-			console.log(new_list);
+			filterSaga(sagaChoosed);
 		}
 	},
 };
